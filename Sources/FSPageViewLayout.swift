@@ -29,6 +29,9 @@ class FSPagerViewLayout: UICollectionViewLayout {
     fileprivate var numberOfItems = 0
     fileprivate var actualInteritemSpacing: CGFloat = 0
     fileprivate var actualItemSize: CGSize = .zero
+    fileprivate var totalNumberOfItems: Int {
+        return self.numberOfSections * self.numberOfItems
+    }
     
     override init() {
         super.init()
@@ -109,7 +112,7 @@ class FSPagerViewLayout: UICollectionViewLayout {
     
     override open func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
         var layoutAttributes = [UICollectionViewLayoutAttributes]()
-        guard self.itemSpacing > 0, !rect.isEmpty else {
+        guard self.itemSpacing > 0, self.numberOfItems > 0, self.totalNumberOfItems > 0, !rect.isEmpty else {
             return layoutAttributes
         }
         let rect = rect.intersection(CGRect(origin: .zero, size: self.contentSize))
@@ -118,15 +121,20 @@ class FSPagerViewLayout: UICollectionViewLayout {
         }
         // Calculate start position and index of certain rects
         let numberOfItemsBefore = self.scrollDirection == .horizontal ? max(Int((rect.minX-self.leadingSpacing)/self.itemSpacing),0) : max(Int((rect.minY-self.leadingSpacing)/self.itemSpacing),0)
-        let startPosition = self.leadingSpacing + CGFloat(numberOfItemsBefore)*self.itemSpacing
-        let startIndex = numberOfItemsBefore
+        let visibleIndexRange = self.visibleIndexRange
+        let startIndex = max(numberOfItemsBefore, visibleIndexRange?.lowerBound ?? 0)
+        guard startIndex < self.totalNumberOfItems else {
+            return layoutAttributes
+        }
+        let startPosition = self.leadingSpacing + CGFloat(startIndex)*self.itemSpacing
         // Create layout attributes
         var itemIndex = startIndex
         
         var origin = startPosition
         let maxPosition = self.scrollDirection == .horizontal ? min(rect.maxX,self.contentSize.width-self.actualItemSize.width-self.leadingSpacing) : min(rect.maxY,self.contentSize.height-self.actualItemSize.height-self.leadingSpacing)
         // https://stackoverflow.com/a/10335601/2398107
-        while origin-maxPosition <= max(CGFloat(100.0) * .ulpOfOne * abs(origin+maxPosition), .leastNonzeroMagnitude) {
+        while origin-maxPosition <= max(CGFloat(100.0) * .ulpOfOne * abs(origin+maxPosition), .leastNonzeroMagnitude)
+            && itemIndex <= (visibleIndexRange?.upperBound ?? self.totalNumberOfItems-1) {
             let indexPath = IndexPath(item: itemIndex%self.numberOfItems, section: itemIndex/self.numberOfItems)
             let attributes = self.layoutAttributesForItem(at: indexPath) as! FSPagerViewLayoutAttributes
             self.applyTransform(to: attributes, with: self.pagerView?.transformer)
@@ -244,6 +252,29 @@ class FSPagerViewLayout: UICollectionViewLayout {
         let frame = CGRect(origin: origin, size: self.actualItemSize)
         return frame
     }
+
+    fileprivate var visibleIndexRange: ClosedRange<Int>? {
+        guard let pagerView = self.pagerView else {
+            return nil
+        }
+        let visibleItemsPerSide = Int(pagerView.visibleItemsPerSide)
+        guard visibleItemsPerSide > 0, self.totalNumberOfItems > 0 else {
+            return nil
+        }
+        let currentFocusedIndex = self.currentFocusedIndex
+        let lowerBound = max(currentFocusedIndex-visibleItemsPerSide, 0)
+        let upperBound = min(currentFocusedIndex+visibleItemsPerSide, self.totalNumberOfItems-1)
+        return lowerBound...upperBound
+    }
+
+    fileprivate var currentFocusedIndex: Int {
+        guard let collectionView = self.collectionView, self.itemSpacing > 0 else {
+            return 0
+        }
+        let contentOffset = self.scrollDirection == .horizontal ? collectionView.contentOffset.x : collectionView.contentOffset.y
+        let focusedIndex = lround(Double(contentOffset/self.itemSpacing))
+        return min(max(focusedIndex, 0), self.totalNumberOfItems-1)
+    }
     
     // MARK:- Notification
     @objc
@@ -292,5 +323,4 @@ class FSPagerViewLayout: UICollectionViewLayout {
     }
 
 }
-
 

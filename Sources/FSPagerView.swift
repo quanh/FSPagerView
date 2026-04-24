@@ -132,6 +132,14 @@ open class FSPagerView: UIView,UICollectionViewDataSource,UICollectionViewDelega
     /// An unsigned integer value that determines the deceleration distance of the pager view, which indicates the number of passing items during the deceleration. When the value of this property is FSPagerView.automaticDistance, the actual 'distance' is automatically calculated according to the scrolling speed of the pager view. Default is 1.
     @IBInspectable
     open var decelerationDistance: UInt = 1
+
+    /// The number of extra items kept visible on each side of the current item. Default is 0, which keeps the original behavior without limiting the visible range.
+    @IBInspectable
+    open var visibleItemsPerSide: UInt = 0 {
+        didSet {
+            self.collectionViewLayout.invalidateLayout()
+        }
+    }
     
     /// A Boolean value that determines whether scrolling is enabled.
     @IBInspectable
