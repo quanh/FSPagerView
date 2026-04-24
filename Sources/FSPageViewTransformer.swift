@@ -240,34 +240,34 @@ open class FSPagerViewTransformer: NSObject {
             return 0
         }
         let scrollDirection = pagerView.scrollDirection
+        let extraSpacing = pagerView.transformerInteritemSpacing
         switch self.type {
         case .overlap:
             guard scrollDirection == .horizontal else {
                 return 0
             }
-            return pagerView.itemSize.width * -self.minimumScale * 0.6
+            return pagerView.itemSize.width * -self.minimumScale * 0.6 + extraSpacing
         case .linear:
             guard scrollDirection == .horizontal else {
                 return 0
             }
-            return pagerView.itemSize.width * -self.minimumScale * 0.2
+            return pagerView.itemSize.width * -self.minimumScale * 0.2 + extraSpacing
         case .coverFlow:
             guard scrollDirection == .horizontal else {
                 return 0
             }
-            return -pagerView.itemSize.width * sin(.pi*0.25*0.25*3.0)
+            return -pagerView.itemSize.width * sin(.pi*0.25*0.25*3.0) + extraSpacing
         case .ferrisWheel,.invertedFerrisWheel:
             guard scrollDirection == .horizontal else {
                 return 0
             }
-            return -pagerView.itemSize.width * 0.15
+            return -pagerView.itemSize.width * 0.15 + extraSpacing
         case .cubic:
-            return 0
+            return extraSpacing
         default:
             break
         }
-        return pagerView.interitemSpacing
+        return pagerView.interitemSpacing + extraSpacing
     }
     
 }
-

@@ -111,6 +111,14 @@ open class FSPagerView: UIView,UICollectionViewDataSource,UICollectionViewDelega
             self.collectionViewLayout.forceInvalidate()
         }
     }
+
+    /// Extra spacing applied on top of the transformer-proposed spacing. This only takes effect when a transformer is set. Default is 0.
+    @IBInspectable
+    open var transformerInteritemSpacing: CGFloat = 0 {
+        didSet {
+            self.collectionViewLayout.forceInvalidate()
+        }
+    }
     
     /// The item size of the pager view. When the value of this property is FSPagerView.automaticSize, the items fill the entire visible area of the pager view. Default is FSPagerView.automaticSize.
     @IBInspectable
